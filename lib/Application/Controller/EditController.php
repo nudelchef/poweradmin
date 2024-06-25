@@ -133,12 +133,18 @@ class EditController extends BaseController
             $dnsRecord->update_soa_serial($zone_id);
 
             $dnssecProvider = DnssecProviderFactory::create($this->db, $this->getConfig());
-            $result = $dnssecProvider->secureZone($zone_name);
-            $dnssecProvider->rectifyZone($zone_name);
 
-            if ($result) {
-                $this->setMessage('edit', 'success', _('Zone has been signed successfully.'));
+            if ($dnssecProvider->isDnssecEnabled()) {
+                $result = $dnssecProvider->secureZone($zone_name);
+
+                if ($result) {
+                    $this->setMessage('edit', 'success', _('Zone has been signed successfully.'));
+                }
+            } else {
+                $this->setMessage('edit', 'error', _('DNSSEC is not enabled on the server.'));
             }
+
+            $dnssecProvider->rectifyZone($zone_name);
         }
 
         if (isset($_POST['unsign_zone'])) {
@@ -149,9 +155,11 @@ class EditController extends BaseController
             $this->setMessage('edit', 'success', _('Zone has been unsigned successfully.'));
         }
 
+        $zone_templates = new ZoneTemplate($this->db, $this->getConfig());
+
         $domain_type = $dnsRecord->get_domain_type($zone_id);
         $record_count = $dnsRecord->count_zone_records($zone_id);
-        $zone_templates = ZoneTemplate::get_list_zone_templ($this->db, $_SESSION['userid']);
+        $zone_templates = $zone_templates->get_list_zone_templ($_SESSION['userid']);
         $zone_template_id = DnsRecord::get_zone_template($this->db, $zone_id);
         $zone_template_details = ZoneTemplate::get_zone_templ_details($this->db, $zone_template_id);
 
@@ -325,14 +333,13 @@ class EditController extends BaseController
         if (ZoneTemplate::zone_templ_name_exists($this->db, $template_name)) {
             $this->showError(_('Zone template with this name already exists, please choose another one.'));
         } elseif ($template_name == '') {
-            $this->showError(_('Template name can\'t be an empty string.'));
+            $this->showError(_("Template name can't be an empty string."));
         } else {
             $dnsRecord = new DnsRecord($this->db, $this->getConfig());
-            $dnsRecord->get_records_from_domain_id($this->config('db_type'), $zone_id);
+            $records = $dnsRecord->get_records_from_domain_id($this->config('db_type'), $zone_id);
 
             $description = htmlspecialchars($_POST['templ_descr']) ?? '';
 
-            // FIXME: $records is undefined
             ZoneTemplate::add_zone_templ_save_as($this->db, $template_name, $description, $_SESSION['userid'], $records, $dnsRecord->get_domain_name_by_id($zone_id));
             $this->setMessage('edit', 'success', _('Zone template has been added successfully.'));
         }

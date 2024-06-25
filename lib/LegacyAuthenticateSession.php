@@ -55,7 +55,7 @@ class LegacyAuthenticateSession
                 $_SESSION["userpwd"] = $passwordEncryptionService->encrypt($_POST['password']);
 
                 $_SESSION["userlogin"] = $_POST["username"];
-                $_SESSION["userlang"] = $_POST["userlang"];
+                $_SESSION["userlang"] = $_POST["userlang"] ?? $this->config->get('iface_lang');
             } else {
                 $sessionEntity = new SessionEntity(_('An empty password is not allowed'), 'danger');
                 $this->authenticationService->auth($sessionEntity);
@@ -96,6 +96,7 @@ class LegacyAuthenticateSession
         $session_key = $this->config->get('session_key');
         $ldap_uri = $this->config->get('ldap_uri');
         $ldap_basedn = $this->config->get('ldap_basedn');
+        $ldap_search_filter = $this->config->get('ldap_search_filter');
         $ldap_binddn = $this->config->get('ldap_binddn');
         $ldap_bindpw = $this->config->get('ldap_bindpw');
         $ldap_proto = $this->config->get('ldap_proto');
@@ -133,7 +134,16 @@ class LegacyAuthenticateSession
         }
 
         $attributes = array($ldap_user_attribute, 'dn');
-        $filter = "(" . $ldap_user_attribute . "=" . $_SESSION["userlogin"] . ")";
+        $filter = $ldap_search_filter
+            ? "(&($ldap_user_attribute={$_SESSION['userlogin']})$ldap_search_filter)"
+            : "($ldap_user_attribute={$_SESSION['userlogin']})";
+
+        if ($ldap_debug) {
+            echo "<div class=\"container\"><pre>";
+            echo sprintf("LDAP search filter: %s\n", $filter);
+            echo "</pre></div>";
+        }
+
         $ldapsearch = ldap_search($ldapconn, $ldap_basedn, $filter, $attributes);
         if (!$ldapsearch) {
             if (isset($_POST["authenticate"])) {

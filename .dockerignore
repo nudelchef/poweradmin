@@ -1,0 +1,41 @@
+# Version Control
+.gitignore
+.git
+.github
+
+# IDE
+nbproject
+.idea
+.settings
+.buildpath
+.project
+.vscode
+
+# PHPUnit
+tests
+phpunit.xml.dist
+.phpunit.cache
+.phpunit.result.cache
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# phpDocumentor
+docs
+.phive
+tools
+
+# Vagrant
+vagrant
+Vagrantfile
+VAGRANT.md
+
+# Misc
+**/.DS_Store
+.devcontainer
+phpdoc.dist.xml
+scripts
+transifex.yml
+*.md

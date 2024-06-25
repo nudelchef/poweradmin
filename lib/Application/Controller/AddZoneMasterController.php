@@ -87,10 +87,10 @@ class AddZoneMasterController extends BaseController
             $this->setMessage('add_zone_master', 'error', _('Invalid hostname.'));
             $this->showForm();
         } elseif ($dns_third_level_check && DnsRecord::get_domain_level($zone_name) > 2 && $dnsRecord->domain_exists(DnsRecord::get_second_level_domain($zone_name))) {
-            $this->setMessage('add_zone_master', 'error', _('There is already a zone_name with this name.'));
+            $this->setMessage('add_zone_master', 'error', _('There is already a zone with this name.'));
             $this->showForm();
         } elseif ($dnsRecord->domain_exists($zone_name) || $dnsRecord->record_name_exists($zone_name)) {
-            $this->setMessage('add_zone_master', 'error', _('There is already a zone_name with this name.'));
+            $this->setMessage('add_zone_master', 'error', _('There is already a zone with this name.'));
             $this->showForm();
         } elseif ($dnsRecord->add_domain($this->db, $zone_name, $owner, $dom_type, '', $zone_template)) {
             $this->setMessage('list_zones', 'success', _('Zone has been added successfully.'));
@@ -103,7 +103,7 @@ class AddZoneMasterController extends BaseController
             if ($pdnssec_use) {
                 $dnssecProvider = DnssecProviderFactory::create($this->db, $this->getConfig());
 
-                if (isset($_POST['dnssec'])) {
+                if (isset($_POST['dnssec']) && $dnssecProvider->isDnssecEnabled()) {
                     $dnssecProvider->secureZone($zone_name);
                 }
 
@@ -117,13 +117,14 @@ class AddZoneMasterController extends BaseController
     private function showForm(): void
     {
         $perm_view_others = LegacyUsers::verify_permission($this->db, 'user_view_others');
+        $zone_templates = new ZoneTemplate($this->db, $this->getConfig());
 
         $this->render('add_zone_master.html', [
             'perm_view_others' => $perm_view_others,
             'session_user_id' => $_SESSION['userid'],
             'available_zone_types' => array("MASTER", "NATIVE"),
             'users' => LegacyUsers::show_users($this->db),
-            'zone_templates' => ZoneTemplate::get_list_zone_templ($this->db, $_SESSION['userid']),
+            'zone_templates' => $zone_templates->get_list_zone_templ($_SESSION['userid']),
             'iface_zone_type_default' => $this->config('iface_zone_type_default'),
             'pdnssec_use' => $this->config('pdnssec_use'),
         ]);

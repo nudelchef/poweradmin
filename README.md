@@ -28,7 +28,7 @@ other [options](https://github.com/PowerDNS/pdns/wiki/WebFrontends).
 
 | Poweradmin | PHP            | PowerDNS | MariaDB | MySQL  | PostgreSQL | SQLite |
 |------------|----------------|----------|---------|--------|------------|--------|
-| 3.8.x      | 8.1.2          |          |         |        |            |        |
+| 3.8.x      | 8.1.28         |          | 10.11.8 |        |            |        |
 | 3.7.x      | 8.1.2          | 4.5.3    | 11.1.2  | 8.2.0  | 16.0       | 3.40.1 |
 | 3.6.x      | 8.1.2          | 4.5.3    | 11.1.2  | 8.1.0  | 16.0       | 3.40.1 |
 | 3.5.x      | 8.1.17         | 4.5.3    | 10.11.2 | 8.0.32 | 15.2       | 3.34.1 |
@@ -95,8 +95,8 @@ error_reporting(E_ALL);
 
 ### Log in
 
-![The login screen](https://www.poweradmin.org/screenshots/ignite_login.png)
+![The login screen](https://raw.githubusercontent.com/poweradmin/poweradmin.github.io/master/screenshots/ignite_login.png)
 
 ### Zone list
 
-![List of zones](https://www.poweradmin.org/screenshots/ignite_zone_list.png)
+![List of zones](https://raw.githubusercontent.com/poweradmin/poweradmin.github.io/master/screenshots/ignite_zone_list.png)

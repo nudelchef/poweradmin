@@ -1,57 +1,18 @@
-#!/usr/bin/env bash
-
-set -e # Exit if any subcommand fails
-#set -x # Print commands for troubleshooting
-
-sudo yum -y update
-sudo yum -y install mariadb-server mariadb
-sudo yum -y install epel-release
-sudo yum -y install pdns-backend-mysql pdns
-sudo yum -y install httpd php-fpm php-cli php-mysqlnd
-
-# Autostart services on reboot
-sudo systemctl enable mariadb
-sudo systemctl enable httpd
-sudo systemctl enable pdns
-sudo systemctl enable php-fpm
-
-cat <<EOT >>/etc/httpd/conf.modules.d/02-php.conf
-      <FilesMatch \.php$>
-         SetHandler "proxy:fcgi://127.0.0.1:9000"
-      </FilesMatch>
-
-     DirectoryIndex index.php
-EOT
-
-# Disable SELinux
-echo "Disable SELinux"
-sudo cat <<EOT >>/etc/selinux/config
-     SELINUX=disabled
-     SELINUXTYPE=targeted
-EOT
-
-# SELinux Permissive
-sudo setenforce 0
-
-echo "Setup database"
-sudo systemctl start mariadb
-sudo mysqladmin create pdns
-sudo mysql -u root -e "GRANT ALL ON pdns.* TO 'poweradmin'@'localhost' IDENTIFIED BY 'poweradmin'"
-
-# Source https://raw.githubusercontent.com/PowerDNS/pdns/rel/auth-4.5.x/modules/gmysqlbackend/schema.mysql.sql
-mysql -u root pdns <<EOT
 CREATE TABLE domains (
   id                    INT AUTO_INCREMENT,
   name                  VARCHAR(255) NOT NULL,
   master                VARCHAR(128) DEFAULT NULL,
   last_check            INT DEFAULT NULL,
-  type                  VARCHAR(6) NOT NULL,
+  type                  VARCHAR(8) NOT NULL,
   notified_serial       INT UNSIGNED DEFAULT NULL,
   account               VARCHAR(40) CHARACTER SET 'utf8' DEFAULT NULL,
+  options               VARCHAR(64000) DEFAULT NULL,
+  catalog               VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (id)
 ) Engine=InnoDB CHARACTER SET 'latin1';
 
 CREATE UNIQUE INDEX name_index ON domains(name);
+CREATE INDEX catalog_idx ON domains(catalog);
 
 
 CREATE TABLE records (
@@ -129,22 +90,3 @@ CREATE TABLE tsigkeys (
 ) Engine=InnoDB CHARACTER SET 'latin1';
 
 CREATE UNIQUE INDEX namealgoindex ON tsigkeys(name, algorithm);
-
-EOT
-
-cat <<EOT >>/etc/pdns/pdns.conf
-launch=gmysql
-gmysql-host=127.0.0.1
-gmysql-user=root
-gmysql-dbname=pdns
-gmysql-password=
-EOT
-
-sudo systemctl start pdns
-sudo systemctl start php-fpm
-sudo systemctl start httpd
-
-echo "READY: Poweradmin is available via http://poweradmin.local/install"
-echo "Database: pdns"
-echo "MySQL user: poweradmin"
-echo "MySQL password: poweradmin"
